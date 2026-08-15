@@ -8,34 +8,48 @@
 #include "exec/elf.hpp"
 #include "ui/gui.hpp"
 
+static inline void boot_stage(char c){asm volatile("outb %0, $0xe9"::"a"((uint8_t)c));}
 static void housekeeping(){proc::sleep_current(50);}
 static void storage_service(){proc::sleep_current(100);}
 
 extern "C" void kernel_main(uint32_t magic,uint64_t mbi){
+    boot_stage('K');
     arch::serial_init();
+    boot_stage('I');
     arch::serial_print("IrOS x86_64 bootstrap entered\n");
 
     boot::Info info{};
+    boot_stage('B');
     if(!boot::parse(magic,mbi,info)){
+        boot_stage('X');
         arch::serial_print("Multiboot2 information invalid\n");
         cpu_cli();for(;;)cpu_hlt();
     }
+    boot_stage('P');
 
     memory::init(info.mmap_tag,info.total_memory);
+    boot_stage('M');
     vfs::init();
+    boot_stage('V');
     proc::init();
     elf::install_demo();
+    boot_stage('E');
     proc::spawn("kernel-housekeeping",housekeeping);
     proc::spawn("vfs-service",storage_service);
 
     bool graphics=gui::init(info.fb);
+    boot_stage('G');
     input::keyboard_init();
+    boot_stage('D');
     arch::interrupts_init();
+    boot_stage('N');
     input::mouse_init(graphics?(int)info.fb.width:1024,graphics?(int)info.fb.height:768);
+    boot_stage('O');
 
     arch::serial_print("IrOS kernel ready\n");
     arch::serial_print("arch=x86_64 idt=online keyboard=irq mouse=irq elf64=online vfs=online gui=");
     arch::serial_print(graphics?"framebuffer\n":"serial-only\n");
+    boot_stage('Q');
 
     cpu_sti();
     gui::mark_dirty();
