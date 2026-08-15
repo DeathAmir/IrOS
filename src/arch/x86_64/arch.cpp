@@ -36,15 +36,17 @@ uint64_t ticks(){return timer_ticks;}
 
 struct __attribute__((packed)) IdtEntry{uint16_t off0,sel;uint8_t ist,type;uint16_t off1;uint32_t off2;uint32_t zero;};
 struct __attribute__((packed)) Idtr{uint16_t limit;uint64_t base;};
-static IdtEntry idt[256];
+alignas(16) static IdtEntry idt[256];
+alignas(16) static Idtr idtr{};
 static void gate(int i,void* fn){uint64_t a=(uint64_t)fn;idt[i].off0=a&0xFFFF;idt[i].sel=0x18;idt[i].ist=0;idt[i].type=0x8E;idt[i].off1=(a>>16)&0xFFFF;idt[i].off2=(uint32_t)(a>>32);idt[i].zero=0;}
 void interrupts_init(){
     trace('j');
     for(int i=0;i<256;++i)gate(i,isr_stub_table[i]);
     trace('k');
-    Idtr p{sizeof(idt)-1,(uint64_t)idt};
+    idtr.limit=(uint16_t)(sizeof(idt)-1);
+    idtr.base=(uint64_t)&idt[0];
     trace('l');
-    idt_load(&p);
+    asm volatile("lidt %0"::"m"(idtr):"memory");
     trace('m');
     pic_init();
     trace('n');
@@ -61,6 +63,6 @@ extern "C" void interrupt_dispatch(InterruptFrame* f){
     if(v==32){++arch::timer_ticks;proc::on_timer_tick();}
     else if(v==33)input::keyboard_irq();
     else if(v==44)input::mouse_irq();
-    else if(v<32){char h[19];ir::u64hex(v,h);arch::serial_print("IrOS exception ");arch::serial_print(h);arch::serial_print(" RIP=");ir::u64hex(f->rip,h);arch::serial_print(h);if(v==14){arch::serial_print(" CR2=");ir::u64hex(cpu_read_cr2(),h);arch::serial_print(h);}arch::serial_print("\n");cpu_cli();for(;;)cpu_hlt();}
+    else if(v<32){char h[19];ir::u64hex(v,h);arch::serial_print("IrOS exception ");arch::serial_print(h);arch::serial_print(" RIP=");ir::u64hex(f->rip,h);arch::serial_print(h);arch::serial_print(" ERR=");ir::u64hex(f->error,h);arch::serial_print(h);if(v==14){arch::serial_print(" CR2=");ir::u64hex(cpu_read_cr2(),h);arch::serial_print(h);}arch::serial_print("\n");cpu_cli();for(;;)cpu_hlt();}
     arch::pic_eoi(v);
 }
