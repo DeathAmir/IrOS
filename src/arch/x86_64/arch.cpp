@@ -27,8 +27,8 @@ void pic_init(){
     io_out8(0xA1,2);trace('v');
     io_out8(0x21,1);trace('w');
     io_out8(0xA1,1);trace('x');
-    io_out8(0x21,0xF8);trace('y');
-    io_out8(0xA1,0xEF);trace('z');
+    io_out8(0x21,0xFE);trace('y');
+    io_out8(0xA1,0xFF);trace('z');
 }
 void pic_eoi(uint8_t v){if(v<32||v>47)return;if(v>=40)io_out8(0xA0,0x20);io_out8(0x20,0x20);}
 void pit_init(uint32_t hz){trace('4');if(hz<19)hz=19;uint32_t d=1193182u/hz;io_out8(0x43,0x36);trace('5');io_out8(0x40,d&0xFF);trace('6');io_out8(0x40,(d>>8)&0xFF);trace('7');}
@@ -57,7 +57,7 @@ const char* cpu_vendor(){static char v[13];uint32_t a,b,c,d;cpu_cpuid(0,0,&a,&b,
 void cpu_brand(char* out,size_t cap){if(!cap)return;out[0]=0;uint32_t b,c,d,max;cpu_cpuid(0x80000000,0,&max,&b,&c,&d);if(max<0x80000004){ir::strcpy(out,cpu_vendor(),cap);return;}uint32_t data[12];for(uint32_t i=0;i<3;++i)cpu_cpuid(0x80000002+i,0,&data[i*4],&data[i*4+1],&data[i*4+2],&data[i*4+3]);char* s=(char*)data;size_t n=0;while(s[n]&&n+1<cap){out[n]=s[n];++n;}out[n]=0;}
 }
 
-struct InterruptFrame{uint64_t r15,r14,r13,r12,r11,r10,r9,r8,rdi,rsi,rbp,rdx,rcx,rbx,rax,vector,error,rip,cs,rflags;};
+struct InterruptFrame{uint64_t r15,r14,r13,r12,r11,r10,r9,r8,rdi,rsi,rbp,rdx,rcx,rbx,rax,vector,error,rip,cs,rflags,rsp,ss;};
 extern "C" void interrupt_dispatch(InterruptFrame* f){
     static uint32_t irq_trace_count=0;
     uint8_t v=(uint8_t)f->vector;
@@ -67,7 +67,8 @@ extern "C" void interrupt_dispatch(InterruptFrame* f){
         arch::serial_print("IRQ vector=");ir::u64hex(v,h);arch::serial_print(h);
         arch::serial_print(" RIP=");ir::u64hex(f->rip,h);arch::serial_print(h);
         arch::serial_print(" CS=");ir::u64hex(f->cs,h);arch::serial_print(h);
-        arch::serial_print(" RFLAGS=");ir::u64hex(f->rflags,h);arch::serial_print(h);arch::serial_print("\n");
+        arch::serial_print(" RFLAGS=");ir::u64hex(f->rflags,h);arch::serial_print(h);
+        arch::serial_print(" RSP=");ir::u64hex(f->rsp,h);arch::serial_print(h);arch::serial_print("\n");
     }
     if(v==32){++arch::timer_ticks;}
     else if(v==33)input::keyboard_irq();
