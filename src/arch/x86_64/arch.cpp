@@ -30,7 +30,7 @@ void pic_init(){
     io_out8(0x21,0xF8);trace('y');
     io_out8(0xA1,0xEF);trace('z');
 }
-void pic_eoi(uint8_t v){if(v>=40)io_out8(0xA0,0x20);if(v>=32)io_out8(0x20,0x20);}
+void pic_eoi(uint8_t v){if(v<32||v>47)return;if(v>=40)io_out8(0xA0,0x20);io_out8(0x20,0x20);}
 void pit_init(uint32_t hz){trace('4');if(hz<19)hz=19;uint32_t d=1193182u/hz;io_out8(0x43,0x36);trace('5');io_out8(0x40,d&0xFF);trace('6');io_out8(0x40,(d>>8)&0xFF);trace('7');}
 uint64_t ticks(){return timer_ticks;}
 
@@ -60,7 +60,7 @@ void cpu_brand(char* out,size_t cap){if(!cap)return;out[0]=0;uint32_t b,c,d,max;
 struct InterruptFrame{uint64_t r15,r14,r13,r12,r11,r10,r9,r8,rdi,rsi,rbp,rdx,rcx,rbx,rax,vector,error,rip,cs,rflags;};
 extern "C" void interrupt_dispatch(InterruptFrame* f){
     uint8_t v=(uint8_t)f->vector;
-    if(v==32){++arch::timer_ticks;proc::on_timer_tick();}
+    if(v==32){++arch::timer_ticks;}
     else if(v==33)input::keyboard_irq();
     else if(v==44)input::mouse_irq();
     else if(v<32){char h[19];ir::u64hex(v,h);arch::serial_print("IrOS exception ");arch::serial_print(h);arch::serial_print(" RIP=");ir::u64hex(f->rip,h);arch::serial_print(h);arch::serial_print(" ERR=");ir::u64hex(f->error,h);arch::serial_print(h);if(v==14){arch::serial_print(" CR2=");ir::u64hex(cpu_read_cr2(),h);arch::serial_print(h);}arch::serial_print("\n");cpu_cli();for(;;)cpu_hlt();}
