@@ -5,7 +5,17 @@
 
 namespace arch {
 static bool serial_ok=false;static volatile uint64_t timer_ticks=0;
-void serial_init(){io_out8(0x3F9,0);io_out8(0x3FB,0x80);io_out8(0x3F8,3);io_out8(0x3F9,0);io_out8(0x3FB,3);io_out8(0x3FA,0xC7);io_out8(0x3FC,0x0B);serial_ok=true;}
+static inline void trace(char c){asm volatile("outb %0, $0xe9"::"a"((uint8_t)c));}
+void serial_init(){
+    trace('a');io_out8(0x3F9,0);trace('b');
+    io_out8(0x3FB,0x80);trace('c');
+    io_out8(0x3F8,3);trace('d');
+    io_out8(0x3F9,0);trace('e');
+    io_out8(0x3FB,3);trace('f');
+    io_out8(0x3FA,0xC7);trace('g');
+    io_out8(0x3FC,0x0B);trace('h');
+    serial_ok=true;trace('i');
+}
 void serial_put(char c){if(!serial_ok)return;while((io_in8(0x3FD)&0x20)==0){}io_out8(0x3F8,(uint8_t)c);}
 void serial_print(const char* s){while(s&&*s){if(*s=='\n')serial_put('\r');serial_put(*s++);}}
 void pic_init(){
