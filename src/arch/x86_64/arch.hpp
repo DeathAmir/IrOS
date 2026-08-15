@@ -21,6 +21,8 @@ extern "C" uint64_t cpu_rdmsr(uint32_t msr);
 extern "C" void cpu_wrmsr(uint32_t msr,uint64_t value);
 extern "C" void idt_load(void* ptr);
 extern "C" void* isr_stub_table[];
+extern "C" void irq0_minimal();
+extern "C" volatile uint64_t irq0_ticks;
 extern "C" uint8_t kernel_end;
 
 namespace arch {
