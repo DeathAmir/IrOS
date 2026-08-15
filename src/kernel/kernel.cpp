@@ -13,7 +13,6 @@ static void housekeeping(){proc::sleep_current(50);}
 static void storage_service(){proc::sleep_current(100);}
 
 extern "C" void kernel_main(uint32_t magic,uint64_t mbi){
-    cpu_cli();
     boot_stage('K');
     arch::serial_init();
     arch::serial_print("IrOS x86_64 bootstrap entered\n");
