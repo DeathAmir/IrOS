@@ -138,12 +138,22 @@ long_mode_start:
     xor ax, ax
     mov fs, ax
     mov gs, ax
+    mov al, 'S'
+    out 0xE9, al
     mov rsp, stack64_top
     and rsp, -16
     xor rbp, rbp
+    mov al, 'T'
+    out 0xE9, al
     mov edi, dword [mb_magic]
     mov esi, dword [mb_info]
+    mov al, 'A'
+    out 0xE9, al
+    mov al, 'C'
+    out 0xE9, al
     call kernel_main
+    mov al, 'R'
+    out 0xE9, al
 .halt:
     cli
     hlt
