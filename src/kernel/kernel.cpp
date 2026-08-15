@@ -46,13 +46,28 @@ extern "C" void kernel_main(uint32_t magic,uint64_t mbi){
     input::mouse_init(graphics?(int)info.fb.width:1024,graphics?(int)info.fb.height:768);
     boot_stage('O');
 
+    boot_stage('U');
+    gui::mark_dirty();
+    gui::render();
+    boot_stage('W');
+
+    boot_stage('H');
+    asm volatile("int $0x80");
+    boot_stage('J');
+
     arch::serial_print("IrOS kernel ready\n");
     arch::serial_print("arch=x86_64 idt=online keyboard=irq mouse=irq elf64=online vfs=online gui=");
     arch::serial_print(graphics?"framebuffer\n":"serial-only\n");
     boot_stage('Q');
 
     cpu_sti();
-    gui::mark_dirty();
+    uint64_t irq_start=arch::ticks();
+    while(arch::ticks()-irq_start<8)cpu_hlt();
+    cpu_cli();
+    arch::serial_print("IrOS runtime stable\n");
+    boot_stage('Z');
+    cpu_sti();
+
     uint64_t last_second=~0ull;
     for(;;){
         input::KeyEvent e{};
