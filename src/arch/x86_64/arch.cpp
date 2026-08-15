@@ -19,7 +19,7 @@ uint64_t ticks(){return timer_ticks;}
 struct __attribute__((packed)) IdtEntry{uint16_t off0,sel;uint8_t ist,type;uint16_t off1;uint32_t off2;uint32_t zero;};
 struct __attribute__((packed)) Idtr{uint16_t limit;uint64_t base;};
 static IdtEntry idt[256];
-static void gate(int i,void* fn){uint64_t a=(uint64_t)fn;idt[i].off0=a&0xFFFF;idt[i].sel=0x08;idt[i].ist=0;idt[i].type=0x8E;idt[i].off1=(a>>16)&0xFFFF;idt[i].off2=(uint32_t)(a>>32);idt[i].zero=0;}
+static void gate(int i,void* fn){uint64_t a=(uint64_t)fn;idt[i].off0=a&0xFFFF;idt[i].sel=0x18;idt[i].ist=0;idt[i].type=0x8E;idt[i].off1=(a>>16)&0xFFFF;idt[i].off2=(uint32_t)(a>>32);idt[i].zero=0;}
 void interrupts_init(){for(int i=0;i<256;++i)gate(i,isr_stub_table[i]);Idtr p{sizeof(idt)-1,(uint64_t)idt};idt_load(&p);pic_init();pit_init(100);}
 const char* cpu_vendor(){static char v[13];uint32_t a,b,c,d;cpu_cpuid(0,0,&a,&b,&c,&d);*(uint32_t*)&v[0]=b;*(uint32_t*)&v[4]=d;*(uint32_t*)&v[8]=c;v[12]=0;return v;}
 void cpu_brand(char* out,size_t cap){if(!cap)return;out[0]=0;uint32_t b,c,d,max;cpu_cpuid(0x80000000,0,&max,&b,&c,&d);if(max<0x80000004){ir::strcpy(out,cpu_vendor(),cap);return;}uint32_t data[12];for(uint32_t i=0;i<3;++i)cpu_cpuid(0x80000002+i,0,&data[i*4],&data[i*4+1],&data[i*4+2],&data[i*4+3]);char* s=(char*)data;size_t n=0;while(s[n]&&n+1<cap){out[n]=s[n];++n;}out[n]=0;}
