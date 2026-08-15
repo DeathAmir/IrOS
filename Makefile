@@ -35,7 +35,7 @@ iso: $(KERNEL)
 	mkdir -p $(ISO_ROOT)/boot/grub
 	cp $(KERNEL) $(ISO_ROOT)/boot/kernel.elf
 	cp grub/grub.cfg $(ISO_ROOT)/boot/grub/grub.cfg
-	grub-mkrescue -o $(ISO) $(ISO_ROOT) >/dev/null 2>&1
+	grub-mkrescue -o $(ISO) $(ISO_ROOT)
 	@echo "Built $(ISO)"
 
 check: iso
