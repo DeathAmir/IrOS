@@ -1,6 +1,16 @@
 BITS 64
 section .text
 extern interrupt_dispatch
+extern irq0_ticks
+
+global irq0_minimal
+irq0_minimal:
+    push rax
+    inc qword [rel irq0_ticks]
+    mov al, 0x20
+    out 0x20, al
+    pop rax
+    iretq
 
 global isr_common
 isr_common:
@@ -105,3 +115,5 @@ isr_stub_table:
     dq isr_%+j
 %assign j j+1
 %endrep
+
+section .note.GNU-stack noalloc noexec nowrite progbits
