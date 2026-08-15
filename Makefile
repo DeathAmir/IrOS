@@ -39,9 +39,10 @@ iso: $(KERNEL)
 	@echo "Built $(ISO)"
 
 check: iso
-	@rm -f $(BUILD)/serial.log
-	@set +e; timeout 10s qemu-system-x86_64 -m 512M -cdrom $(ISO) -display none -serial file:$(BUILD)/serial.log -no-reboot -no-shutdown; status=$$?; set -e; \
-	cat $(BUILD)/serial.log; \
+	@rm -f $(BUILD)/serial.log $(BUILD)/debug.log
+	@set +e; timeout 10s qemu-system-x86_64 -m 512M -cdrom $(ISO) -display none -serial file:$(BUILD)/serial.log -debugcon file:$(BUILD)/debug.log -global isa-debugcon.iobase=0xe9 -no-reboot -no-shutdown; status=$$?; set -e; \
+	echo "--- debugcon ---"; cat $(BUILD)/debug.log || true; echo; \
+	echo "--- serial ---"; cat $(BUILD)/serial.log || true; echo; \
 	grep -q "IrOS kernel ready" $(BUILD)/serial.log; \
 	grep -q "arch=x86_64" $(BUILD)/serial.log; \
 	if [ $$status -ne 0 ] && [ $$status -ne 124 ]; then exit $$status; fi
