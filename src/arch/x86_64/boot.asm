@@ -1,5 +1,4 @@
 BITS 32
-
 section .multiboot
 align 8
 mb2_header_start:
@@ -19,22 +18,18 @@ mb2_header_start:
     dw 0
     dd 8
 mb2_header_end:
-
 section .text
 align 16
 global start
 extern kernel_main
-
 start:
     cli
     mov ebp, eax
     mov esi, ebx
     mov al, '0'
     out 0xE9, al
-
     lgdt [cs:gdt_ptr]
     jmp 0x08:.segments_ready
-
 .segments_ready:
     mov ax, 0x10
     mov ds, ax
@@ -47,32 +42,25 @@ start:
     mov [mb_info], esi
     mov al, '1'
     out 0xE9, al
-
     call check_long_mode
     call setup_page_tables
     mov al, '2'
     out 0xE9, al
-
     mov eax, cr4
     or eax, 1 << 5
     mov cr4, eax
-
     mov eax, pml4
     mov cr3, eax
-
     mov ecx, 0xC0000080
     rdmsr
     or eax, 1 << 8
     wrmsr
-
     mov eax, cr0
     or eax, 1 << 31
     mov cr0, eax
     mov al, '3'
     out 0xE9, al
-
     jmp 0x18:long_mode_start
-
 check_long_mode:
     mov eax, 0x80000000
     cpuid
@@ -90,17 +78,14 @@ check_long_mode:
 .hang:
     hlt
     jmp .hang
-
 setup_page_tables:
     mov edi, pml4
     mov ecx, (4096 * 6) / 4
     xor eax, eax
     rep stosd
-
     mov eax, pdpt
     or eax, 0x3
     mov [pml4], eax
-
     mov eax, pd0
     or eax, 0x3
     mov [pdpt + 0*8], eax
@@ -113,7 +98,6 @@ setup_page_tables:
     mov eax, pd3
     or eax, 0x3
     mov [pdpt + 3*8], eax
-
     mov edi, pd0
     xor ebx, ebx
     mov ecx, 2048
@@ -126,7 +110,6 @@ setup_page_tables:
     add edi, 8
     loop .map_loop
     ret
-
 BITS 64
 long_mode_start:
     mov al, 'L'
@@ -158,12 +141,10 @@ long_mode_start:
     cli
     hlt
     jmp .halt
-
-global io_in8, io_out8, io_in16, io_out16, io_in32, io_out32
+global io_in8, io_out8, io_in16, io_out16, io_in32, io_out32, io_insw, io_outsw
 global cpu_cli, cpu_sti, cpu_hlt
 global cpu_read_cr0, cpu_read_cr2, cpu_read_cr3, cpu_read_cr4, cpu_read_rflags
 global cpu_cpuid, cpu_rdmsr, cpu_wrmsr, idt_load
-
 io_in8:
     mov edx, edi
     xor eax, eax
@@ -192,6 +173,19 @@ io_out32:
     mov edx, edi
     mov eax, esi
     out dx, eax
+    ret
+io_insw:
+    mov rcx, rdx
+    mov edx, edi
+    mov rdi, rsi
+    cld
+    rep insw
+    ret
+io_outsw:
+    mov rcx, rdx
+    mov edx, edi
+    cld
+    rep outsw
     ret
 cpu_cli: cli; ret
 cpu_sti: sti; ret
@@ -223,7 +217,6 @@ cpu_cpuid:
     pop rbx
     ret
 idt_load: lidt [rdi]; ret
-
 section .rodata
 align 8
 gdt:
@@ -235,7 +228,6 @@ gdt_end:
 gdt_ptr:
     dw gdt_end - gdt - 1
     dq gdt
-
 section .bss
 alignb 4096
 pml4: resb 4096

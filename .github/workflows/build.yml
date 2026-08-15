@@ -3,7 +3,6 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
-
 jobs:
   build-and-boot-test:
     runs-on: ubuntu-latest
@@ -14,12 +13,12 @@ jobs:
       - name: Install toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential nasm grub-pc-bin grub-common grub-efi-amd64-bin mtools xorriso qemu-system-x86
-      - name: Build bootable ISO
-        run: make clean iso
+          sudo apt-get install -y build-essential nasm grub-pc-bin grub-common grub-efi-amd64-bin mtools xorriso qemu-system-x86 curl python3-pil
+      - name: Build bootable ISO and persistent disk
+        run: make clean iso disk
       - name: Verify Multiboot2 kernel
         run: grub-file --is-x86-multiboot2 build/kernel.elf
-      - name: QEMU x86_64 smoke boot
+      - name: QEMU persistence and network smoke boot
         run: make check
       - name: Upload IrOS image
         uses: actions/upload-artifact@v4
@@ -27,6 +26,8 @@ jobs:
           name: IrOS-x86_64-QEMU
           path: |
             build/IrOS.iso
+            build/IrOS.disk
             build/kernel.elf
             build/serial.log
+            build/serial-first.log
           if-no-files-found: error
