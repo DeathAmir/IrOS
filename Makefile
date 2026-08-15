@@ -45,6 +45,8 @@ check: iso
 	echo "--- serial ---"; cat $(BUILD)/serial.log || true; echo; \
 	grep -q "IrOS kernel ready" $(BUILD)/serial.log; \
 	grep -q "arch=x86_64" $(BUILD)/serial.log; \
+	grep -q "IrOS runtime stable" $(BUILD)/serial.log; \
+	if grep -q "IrOS exception" $(BUILD)/serial.log; then echo "Kernel exception detected"; exit 1; fi; \
 	if [ $$status -ne 0 ] && [ $$status -ne 124 ]; then exit $$status; fi
 
 run: iso
