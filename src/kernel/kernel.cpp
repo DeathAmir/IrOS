@@ -9,6 +9,7 @@
 #include "ui/gui.hpp"
 
 static inline void boot_stage(char c){asm volatile("outb %0, $0xe9"::"a"((uint8_t)c));}
+static inline void idle_once(){asm volatile("hlt":::"memory");}
 static void housekeeping(){proc::sleep_current(50);}
 static void storage_service(){proc::sleep_current(100);}
 
@@ -23,7 +24,7 @@ extern "C" void kernel_main(uint32_t magic,uint64_t mbi){
     if(!boot::parse(magic,mbi,info)){
         boot_stage('X');
         arch::serial_print("Multiboot2 information invalid\n");
-        cpu_cli();for(;;)cpu_hlt();
+        cpu_cli();for(;;)idle_once();
     }
     boot_stage('P');
 
@@ -62,7 +63,7 @@ extern "C" void kernel_main(uint32_t magic,uint64_t mbi){
 
     cpu_sti();
     uint64_t irq_start=arch::ticks();
-    while(arch::ticks()-irq_start<8)cpu_hlt();
+    while(arch::ticks()-irq_start<8)asm volatile("pause");
     cpu_cli();
     arch::serial_print("IrOS runtime stable\n");
     boot_stage('Z');
@@ -78,6 +79,6 @@ extern "C" void kernel_main(uint32_t magic,uint64_t mbi){
         uint64_t second=arch::ticks()/100;
         if(second!=last_second){last_second=second;gui::mark_dirty();}
         gui::render();
-        cpu_hlt();
+        idle_once();
     }
 }
