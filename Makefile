@@ -48,6 +48,7 @@ disk:
 check: iso disk
 	@rm -f $(BUILD)/serial-first.log $(BUILD)/serial.log $(BUILD)/debug.log
 	@set +e; timeout 7s qemu-system-x86_64 -m 512M -cdrom $(ISO) -drive file=$(DISK),format=raw,if=ide,index=0,media=disk -netdev user,id=n0 -device rtl8139,netdev=n0 -display none -serial file:$(BUILD)/serial-first.log -debugcon file:$(BUILD)/debug.log -global isa-debugcon.iobase=0xe9 -no-reboot -no-shutdown; first=$$?; set -e; \
+	echo "--- first boot serial ---"; cat $(BUILD)/serial-first.log || true; \
 	grep -q "IrOS kernel ready" $(BUILD)/serial-first.log; grep -q "IrOS runtime stable" $(BUILD)/serial-first.log; grep -q "icmp=ok" $(BUILD)/serial-first.log; grep -q "font=Vazirmatn-Regular.ttf" $(BUILD)/serial-first.log; \
 	set +e; timeout 7s qemu-system-x86_64 -m 512M -cdrom $(ISO) -drive file=$(DISK),format=raw,if=ide,index=0,media=disk -netdev user,id=n0 -device rtl8139,netdev=n0 -display none -serial file:$(BUILD)/serial.log -no-reboot -no-shutdown; second=$$?; set -e; \
 	echo "--- second boot serial ---"; cat $(BUILD)/serial.log || true; \
