@@ -59,7 +59,16 @@ void cpu_brand(char* out,size_t cap){if(!cap)return;out[0]=0;uint32_t b,c,d,max;
 
 struct InterruptFrame{uint64_t r15,r14,r13,r12,r11,r10,r9,r8,rdi,rsi,rbp,rdx,rcx,rbx,rax,vector,error,rip,cs,rflags;};
 extern "C" void interrupt_dispatch(InterruptFrame* f){
+    static uint32_t irq_trace_count=0;
     uint8_t v=(uint8_t)f->vector;
+    if(v>=32&&v<=47&&irq_trace_count<4){
+        ++irq_trace_count;
+        char h[19];
+        arch::serial_print("IRQ vector=");ir::u64hex(v,h);arch::serial_print(h);
+        arch::serial_print(" RIP=");ir::u64hex(f->rip,h);arch::serial_print(h);
+        arch::serial_print(" CS=");ir::u64hex(f->cs,h);arch::serial_print(h);
+        arch::serial_print(" RFLAGS=");ir::u64hex(f->rflags,h);arch::serial_print(h);arch::serial_print("\n");
+    }
     if(v==32){++arch::timer_ticks;}
     else if(v==33)input::keyboard_irq();
     else if(v==44)input::mouse_irq();
