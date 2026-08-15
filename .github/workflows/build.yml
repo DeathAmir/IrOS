@@ -1,12 +1,8 @@
-name: Build IrOS
-
+name: Build IrOS x86_64
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   build-and-boot-test:
@@ -15,25 +11,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Install toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y g++-multilib binutils nasm grub-pc-bin grub-common xorriso mtools qemu-system-x86
-
+          sudo apt-get install -y build-essential nasm grub-pc-bin grub-common xorriso qemu-system-x86
       - name: Build bootable ISO
         run: make clean iso
-
-      - name: QEMU smoke boot
+      - name: Verify Multiboot2 kernel
+        run: grub-file --is-x86-multiboot2 build/kernel.elf
+      - name: QEMU x86_64 smoke boot
         run: make check
-
-      - name: Upload IrOS ISO
+      - name: Upload IrOS image
         uses: actions/upload-artifact@v4
         with:
-          name: IrOS-QEMU-x86
+          name: IrOS-x86_64-QEMU
           path: |
             build/IrOS.iso
             build/kernel.elf
             build/serial.log
           if-no-files-found: error
-          retention-days: 30

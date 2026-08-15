@@ -1,48 +1,66 @@
 # IrOS
 
-IrOS is a small freestanding x86 operating system written from scratch for QEMU. Low-level CPU/register and port-I/O operations are implemented in NASM, while the kernel, VGA UI, shell, RAM filesystem and memory manager are written in C++.
+IrOS is a freestanding hobby operating-system kernel targeting **x86_64 QEMU**. Version 0.2 moves the project from a VGA text-mode prototype to a 64-bit graphical kernel foundation.
 
-## Current features
+## What is implemented
 
-- GRUB Multiboot x86 boot path
-- Custom GDT installed during early boot
-- NASM register/port primitives: CR0/CR2/CR3/CR4, EFLAGS, CPUID, IN/OUT, CLI/STI/HLT
-- VGA text desktop UI and interactive IrShell command line
-- PS/2 keyboard polling driver
-- Physical 4 KiB page allocator (up to 1 GiB tracked)
-- Kernel bump heap
-- In-memory RAM filesystem with create/read/write/delete
-- Built-in file manager UI
-- CPU information and control-register diagnostics
-- QEMU reboot and ACPI power-off commands
-- COM1 serial logging for debugging and CI boot verification
-- GitHub Actions build, QEMU smoke test and downloadable ISO artifact
+- Multiboot2 bootstrap and x86_64 long-mode transition in NASM
+- Identity-mapped 4 GiB bootstrap page tables using 2 MiB pages
+- Direct ASM access to CR0/CR2/CR3/CR4, RFLAGS, CPUID, MSRs and port I/O
+- 256-entry IDT and assembly interrupt stubs
+- Remapped 8259 PIC and PIT timer IRQ
+- IRQ-driven PS/2 keyboard input with a buffered event queue
+- PS/2 mouse IRQ support and graphical cursor
+- Multiboot2 memory-map physical page allocator plus a kernel heap
+- Hierarchical in-memory VFS with directories and files
+- ELF64 parser/loader for x86_64 PT_LOAD images
+- Kernel process table, timer accounting and round-robin service scheduler foundation
+- 1024x768x32 framebuffer desktop
+- Built-in bitmap UI font and pixel text renderer
+- Window-style Terminal, File Manager and System Monitor
+- Taskbar, Start panel, mouse task switching and keyboard app shortcuts
+- Serial debug channel for CI and low-level diagnosis
 
-## Build on Ubuntu/Debian
+## Desktop controls
 
-```bash
-sudo apt-get install g++-multilib binutils nasm grub-pc-bin grub-common xorriso mtools qemu-system-x86
-make iso
+- `F1` Terminal
+- `F2` File Manager
+- `F3` System Monitor
+- `Esc` Start panel
+- Mouse: move the cursor and click taskbar buttons
+
+## Terminal commands
+
+`help`, `clear`, `ls`, `cat`, `mkdir`, `touch`, `write`, `ps`, `mem`, `regs`, `cpu`, `elf`, `run`, `reboot`, `poweroff`
+
+Examples:
+
+```text
+ls /
+cat /System/version.txt
+mkdir /Games
+touch /Games/test.txt
+write /Games/test.txt hello-from-IrOS
+elf /bin/demo.elf
+run /bin/demo.elf
+ps
+mem
 ```
 
-The result is `build/IrOS.iso`.
+`/bin/demo.elf` is a tiny embedded x86_64 ELF image used to exercise the loader. `run /bin/demo.elf` loads it and executes its small test entry in kernel space, returning `42`.
 
-## Run
+## Build
+
+On Debian/Ubuntu install `build-essential nasm grub-pc-bin grub-common xorriso qemu-system-x86`, then:
 
 ```bash
+make iso
+make check
 make run
 ```
 
-Or directly:
-
-```bash
-qemu-system-i386 -m 256M -cdrom build/IrOS.iso -boot d
-```
-
-## Shell commands
-
-`help`, `about`, `version`, `clear`, `desktop`, `files`, `ls`, `cat`, `touch`, `write`, `rm`, `mem`, `alloc`, `regs`, `cpuid`, `echo`, `reboot`, `poweroff`.
+Output: `build/IrOS.iso`.
 
 ## Scope
 
-IrOS is a real bootable hobby kernel, not a Linux distribution. It currently targets QEMU/i386 and intentionally uses a RAM filesystem rather than a persistent disk filesystem. The architecture is laid out so interrupts, paging, ATA/AHCI storage, processes, ELF loading and a pixel framebuffer compositor can be added next.
+IrOS is a real bootable hobby kernel, but it is not yet a Windows/Linux-class general-purpose OS. The process layer currently schedules kernel service steps; ELF images are loaded and registered but there is not yet ring-3 isolation, a syscall ABI, copy-on-write VM, persistent disk filesystem, networking, USB, SMP or a full userspace. Those are the next architectural milestones.
