@@ -27,14 +27,31 @@ extern kernel_main
 
 start:
     cli
-    mov [mb_magic], eax
-    mov [mb_info], ebx
+    mov ebp, eax
+    mov esi, ebx
+    mov al, '0'
+    out 0xE9, al
 
+    lgdt [cs:gdt_ptr]
+    jmp 0x08:.segments_ready
+
+.segments_ready:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov fs, ax
+    mov gs, ax
     mov esp, stack32_top
+    mov [mb_magic], ebp
+    mov [mb_info], esi
+    mov al, '1'
+    out 0xE9, al
+
     call check_long_mode
     call setup_page_tables
-
-    lgdt [gdt64_ptr]
+    mov al, '2'
+    out 0xE9, al
 
     mov eax, cr4
     or eax, 1 << 5
@@ -51,8 +68,10 @@ start:
     mov eax, cr0
     or eax, 1 << 31
     mov cr0, eax
+    mov al, '3'
+    out 0xE9, al
 
-    jmp 0x08:long_mode_start
+    jmp 0x18:long_mode_start
 
 check_long_mode:
     mov eax, 0x80000000
@@ -65,6 +84,8 @@ check_long_mode:
     jz .fail
     ret
 .fail:
+    mov al, 'X'
+    out 0xE9, al
     mov dword [0xB8000], 0x4F214F45
 .hang:
     hlt
@@ -108,6 +129,8 @@ setup_page_tables:
 
 BITS 64
 long_mode_start:
+    mov al, 'L'
+    out 0xE9, al
     mov ax, 0x10
     mov ds, ax
     mov es, ax
@@ -170,27 +193,28 @@ idt_load: lidt [rdi]; ret
 
 section .rodata
 align 8
-gdt64:
+gdt:
     dq 0
-    dq 0x00AF9A000000FFFF
+    dq 0x00CF9A000000FFFF
     dq 0x00CF92000000FFFF
-gdt64_end:
-gdt64_ptr:
-    dw gdt64_end - gdt64 - 1
-    dq gdt64
+    dq 0x00AF9A000000FFFF
+gdt_end:
+gdt_ptr:
+    dw gdt_end - gdt - 1
+    dq gdt
 
 section .bss
-align 4096
+alignb 4096
 pml4: resb 4096
 pdpt: resb 4096
 pd0: resb 4096
 pd1: resb 4096
 pd2: resb 4096
 pd3: resb 4096
-align 16
+alignb 16
 mb_magic: resd 1
 mb_info: resd 1
-align 16
+alignb 16
 stack32: resb 16384
 stack32_top:
 stack64: resb 65536
