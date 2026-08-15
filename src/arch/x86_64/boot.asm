@@ -164,12 +164,35 @@ global cpu_cli, cpu_sti, cpu_hlt
 global cpu_read_cr0, cpu_read_cr2, cpu_read_cr3, cpu_read_cr4, cpu_read_rflags
 global cpu_cpuid, cpu_rdmsr, cpu_wrmsr, idt_load
 
-io_in8:  mov dx,di; xor eax,eax; in al,dx; ret
-io_out8: mov dx,di; mov ax,si; out dx,al; ret
-io_in16: mov dx,di; xor eax,eax; in ax,dx; ret
-io_out16: mov dx,di; mov ax,si; out dx,ax; ret
-io_in32: mov dx,di; in eax,dx; ret
-io_out32: mov dx,di; mov eax,esi; out dx,eax; ret
+io_in8:
+    mov edx, edi
+    xor eax, eax
+    in al, dx
+    ret
+io_out8:
+    mov edx, edi
+    mov eax, esi
+    out dx, al
+    ret
+io_in16:
+    mov edx, edi
+    xor eax, eax
+    in ax, dx
+    ret
+io_out16:
+    mov edx, edi
+    mov eax, esi
+    out dx, ax
+    ret
+io_in32:
+    mov edx, edi
+    in eax, dx
+    ret
+io_out32:
+    mov edx, edi
+    mov eax, esi
+    out dx, eax
+    ret
 cpu_cli: cli; ret
 cpu_sti: sti; ret
 cpu_hlt: hlt; ret
